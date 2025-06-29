@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>English Speaking Practice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo-title">
+      <i class="fa-solid fa-language fa-2x"></i>
+    </div>
+    <button id="api-settings-btn" title="Manage API Keys"><i class="fa-solid fa-key"></i></button>
+  </nav>
+  
+  <!-- API Settings Modal -->
+  <div id="api-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Manage API Keys</h3>
+        <button id="close-modal" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Add your Gemini API keys to avoid rate limits. Keys will be used in rotation.</p>
+        <div id="api-keys-list">
+          <!-- API keys will be added here dynamically -->
+        </div>
+        <div class="add-api-section">
+          <input type="text" id="new-api-key" placeholder="Enter your Gemini API key..." />
+          <button id="add-api-key">Add Key</button>
+        </div>
+        <div class="api-status">
+          <span id="api-count">0 keys added</span>
+          <span id="api-status-text"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <main>
+    <section id="sentence-section">
+      <div id="sentence-box">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:10px;">
+          <select id="sentence-type" style="padding:6px 12px;border-radius:8px;font-size:1em;">
+            <option value="general" selected>General conversational sentences</option>
+            <option value="vocab">Sentences with good and new vocabulary</option>
+            <option value="indian">Correct sentences which most Indian people say wrong</option>
+            <option value="custom">Custom sentences (enter your own prompt)</option>
+          </select>
+          <select id="word-count" style="padding:6px 12px;border-radius:8px;font-size:1em;">
+            <option value="short" selected>Short (5-10 words)</option>
+            <option value="medium">Medium (10-20 words)</option>
+            <option value="long">Long (20-30 words)</option>
+          </select>
+          <input id="custom-prompt" type="text" placeholder="Enter your custom prompt..." style="display:none;padding:6px 12px;border-radius:8px;font-size:1em;width:260px;max-width:90vw;" />
+        </div>
+        <p id="sentence" class="highlight">Click <b>Get Sentence</b> to start!</p>
+        <div id="translation" class="translation"></div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:8px;">
+          <button id="speak-sentence" class="speak-btn" title="Speak sentence"><i class="fa-solid fa-volume-up"></i></button>
+          <button id="translate-btn" title="Show simple English explanation"><i class="fa-solid fa-lightbulb"></i> Explain</button>
+          <button id="word-by-word-btn" title="Explain key words in detail"><i class="fa-solid fa-list-ul"></i> Word by Word</button>
+          <button id="get-sentence"><i class="fa-solid fa-wand-magic-sparkles"></i> Get Sentence</button>
+        </div>
+      </div>
+    </section>
+    <section id="recorder-section">
+      <div id="recorder">
+        <button id="record"><i class="fa-solid fa-microphone"></i> Record</button>
+        <span id="recording-indicator" style="display:none;"><i class="fa-solid fa-circle-dot fa-beat" style="color:#e74c3c;"></i> Recording...</span>
+        <button id="save" disabled><i class="fa-solid fa-floppy-disk"></i> Save</button>
+      </div>
+    </section>
+    <section id="recordings-section">
+      <div class="recordings-header">
+        <h2>Saved Recordings</h2>
+        <input id="search-bar" type="text" placeholder="Search recordings..." aria-label="Search recordings">
+      </div>
+      <ul id="recordings-list"></ul>
+    </section>
+    <button id="clear-all" title="Clear all recordings"><i class="fa-solid fa-trash"></i></button>
+    <div id="snackbar" aria-live="polite"></div>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
