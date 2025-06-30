@@ -616,6 +616,29 @@ function clearUnsavedAudioPlayer() {
   }
 }
 
+// --- Custom Audio Player for Recordings ---
+function formatTime(sec) {
+  sec = Math.floor(sec);
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// --- Fix for mobile browsers: audio duration Infinity/NaN ---
+function fixAudioDuration(audio, callback) {
+  if (isNaN(audio.duration) || !isFinite(audio.duration) || audio.duration === 0) {
+    const onTimeUpdate = () => {
+      audio.currentTime = 0;
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      if (callback) callback(audio.duration);
+    };
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.currentTime = 1e101;
+  } else {
+    if (callback) callback(audio.duration);
+  }
+}
+
 function showUnsavedAudioPlayer(audioBlob) {
   clearUnsavedAudioPlayer();
   const audioUrl = URL.createObjectURL(audioBlob);
@@ -637,9 +660,11 @@ function showUnsavedAudioPlayer(audioBlob) {
   const deleteUnsavedBtn = unsavedAudioContainer.querySelector('.delete-unsaved');
 
   audio.addEventListener('loadedmetadata', () => {
-    duration = audio.duration;
-    timeDisplay.textContent = `0:00 / ${formatTime(duration)}`;
-    slider.max = Math.floor(duration);
+    fixAudioDuration(audio, (realDuration) => {
+      duration = realDuration;
+      timeDisplay.textContent = `0:00 / ${formatTime(duration)}`;
+      slider.max = Math.floor(duration);
+    });
   });
 
   audio.addEventListener('timeupdate', () => {
@@ -772,14 +797,6 @@ saveBtn.onclick = () => {
   reader.readAsDataURL(audioBlob);
 };
 
-// --- Custom Audio Player for Recordings ---
-function formatTime(sec) {
-  sec = Math.floor(sec);
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
 // --- Speech Synthesis for Pronouncing Sentences ---
 function speakText(text) {
   if (!window.speechSynthesis) {
@@ -829,9 +846,11 @@ function addRecordingToList(recording, idx) {
   let duration = 0;
 
   audio.addEventListener('loadedmetadata', () => {
-    duration = audio.duration;
-    timeDisplay.textContent = `0:00 / ${formatTime(duration)}`;
-    slider.max = Math.floor(duration);
+    fixAudioDuration(audio, (realDuration) => {
+      duration = realDuration;
+      timeDisplay.textContent = `0:00 / ${formatTime(duration)}`;
+      slider.max = Math.floor(duration);
+    });
   });
 
   audio.addEventListener('timeupdate', () => {
