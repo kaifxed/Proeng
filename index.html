@@ -70,49 +70,62 @@
     </div>
   </div>
   <main>
-    <section id="sentence-section">
-      <div id="sentence-box" class="sentence-box">
-        <div class="sentence-controls">
-          <!-- Only keep the generate sentence, translation, and action buttons here -->
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
-          <p id="sentence" class="highlight" style="margin-bottom: 0;">Click <b>Get Sentence</b> to start!</p>
-          <button id="save-sentence-btn" title="Save this sentence" aria-label="Save sentence"><i class="fa-solid fa-bookmark"></i></button>
-        </div>
-        <div class="sentence-actions-row" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 12px; width: 100%;">
-          <div class="sentence-actions-group">
-            <button id="speak-sentence" class="speak-btn" title="Speak sentence"><i class="fa-solid fa-volume-up"></i></button>
-            <button id="translate-btn" title="Show simple English explanation"><i class="fa-solid fa-lightbulb"></i></button>
-            <button id="word-by-word-btn" title="Explain key words in detail"><i class="fa-solid fa-list-ul"></i></button>
+    <div id="main-tabs" class="tabs-bar" style="margin-bottom: 18px;">
+      <button id="tab-read" class="tab active">Read</button>
+      <button id="tab-speak" class="tab">Speak</button>
+    </div>
+    <div id="read-tab-content">
+      <section id="sentence-section">
+        <div id="sentence-box" class="sentence-box">
+          <div class="sentence-controls"></div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
+            <p id="sentence" class="highlight" style="margin-bottom: 0;">Click <b>Get Sentence</b> to start!</p>
+            <button id="save-sentence-btn" title="Save this sentence" aria-label="Save sentence"><i class="fa-solid fa-bookmark"></i></button>
           </div>
-          <button id="get-sentence" class="generate-btn"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+          <div class="sentence-actions-row" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 12px; width: 100%;">
+            <div class="sentence-actions-group">
+              <button id="speak-sentence" class="speak-btn" title="Speak sentence"><i class="fa-solid fa-volume-up"></i></button>
+              <button id="translate-btn" title="Show simple English explanation"><i class="fa-solid fa-lightbulb"></i></button>
+              <button id="word-by-word-btn" title="Explain key words in detail"><i class="fa-solid fa-list-ul"></i></button>
+            </div>
+            <button id="get-sentence" class="generate-btn"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+          </div>
+          <div id="translation" class="translation"></div>
         </div>
-        <div id="translation" class="translation"></div>
-      </div>
-    </section>
-    <section id="recorder-section">
-      <div id="recorder">
-        <button id="record"><i class="fa-solid fa-microphone"></i></button>
-        <span id="recording-indicator">
-          <i class="fa-solid fa-circle-dot icon-red icon-beat"></i> Recording...
-        </span>
-        <button id="save" disabled><i class="fa-solid fa-floppy-disk"></i></button>
-      </div>
-    </section>
-    <section id="recordings-section">
-      <div class="recordings-header">
-      </div>
-      <div id="recordings-tabs" class="tabs-bar">
-        <button id="tab-recordings" class="tab active">Saved Recordings</button>
-        <button id="tab-sentences" class="tab">Saved Sentences</button>
-      </div>
-      <input id="search-bar" type="text" placeholder="Search recordings..." aria-label="Search recordings" style="margin-bottom: 10px;">
-      <input id="search-sentences-bar" type="text" placeholder="Search saved sentences..." aria-label="Search saved sentences" style="display:none; margin-bottom: 10px;">
-      <ul id="recordings-list"></ul>
-      <ul id="saved-sentences-list" style="display:none;"></ul>
-    </section>
-    <button id="clear-all" title="Clear all recordings"><i class="fa-solid fa-trash"></i></button>
-    <div id="snackbar" aria-live="polite"></div>
+      </section>
+      <section id="recorder-section">
+        <div id="recorder">
+          <button id="record"><i class="fa-solid fa-microphone"></i></button>
+          <span id="recording-indicator">
+            <i class="fa-solid fa-circle-dot icon-red icon-beat"></i> Recording...
+          </span>
+          <button id="save" disabled><i class="fa-solid fa-floppy-disk"></i></button>
+        </div>
+      </section>
+      <section id="recordings-section">
+        <div class="recordings-header"></div>
+        <div id="recordings-tabs" class="tabs-bar">
+          <button id="tab-recordings" class="tab active">Saved Recordings</button>
+          <button id="tab-sentences" class="tab">Saved Sentences</button>
+        </div>
+        <input id="search-bar" type="text" placeholder="Search recordings..." aria-label="Search recordings" style="margin-bottom: 10px;">
+        <input id="search-sentences-bar" type="text" placeholder="Search saved sentences..." aria-label="Search saved sentences" style="display:none; margin-bottom: 10px;">
+        <ul id="recordings-list"></ul>
+        <ul id="saved-sentences-list" style="display:none;"></ul>
+      </section>
+      <button id="clear-all" title="Clear all recordings"><i class="fa-solid fa-trash"></i></button>
+      <div id="snackbar" aria-live="polite"></div>
+    </div>
+    <div id="speak-tab-content" style="display:none;">
+      <section id="speak-section">
+        <div class="speak-box" style="display:flex;flex-direction:column;align-items:center;gap:18px;max-width:600px;margin:0 auto;">
+          <button id="speak-record-btn" class="generate-btn" style="width:56px;height:56px;padding:0;"><i class="fa-solid fa-microphone"></i></button>
+          <div id="speak-transcript" style="min-height:32px;font-size:1.1em;color:#ffd700;text-align:center;"></div>
+          <button id="speak-check-btn" class="generate-btn" style="width:56px;height:56px;display:none;padding:0;"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+          <div id="speak-feedback" class="translation" style="margin-top:18px;"></div>
+        </div>
+      </section>
+    </div>
   </main>
   <script src="script.js"></script>
 </body>

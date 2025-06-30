@@ -596,6 +596,16 @@ const snackbar = document.getElementById("snackbar");
 const searchBar = document.getElementById("search-bar");
 const searchSentencesBar = document.getElementById('search-sentences-bar');
 const clearAllBtn = document.getElementById("clear-all");
+// --- Speak Tab DOM Elements ---
+const tabRead = document.getElementById('tab-read');
+const tabSpeak = document.getElementById('tab-speak');
+const readTabContent = document.getElementById('read-tab-content');
+const speakTabContent = document.getElementById('speak-tab-content');
+const speakRecordBtn = document.getElementById('speak-record-btn');
+const speakTranscript = document.getElementById('speak-transcript');
+const speakCheckBtn = document.getElementById('speak-check-btn');
+const speakFeedback = document.getElementById('speak-feedback');
+const sentenceLangInput = document.getElementById('sentence-lang-input');
 
 // --- State ---
 let mediaRecorder;
@@ -1189,4 +1199,241 @@ clearAllSentencesBtn.onclick = () => {
 // Insert after saved sentences list
 if (savedSentencesListEl && savedSentencesListEl.parentNode) {
   savedSentencesListEl.parentNode.insertBefore(clearAllSentencesBtn, savedSentencesListEl.nextSibling);
+}
+
+// --- Tab Switching Logic ---
+if (tabRead && tabSpeak && readTabContent && speakTabContent) {
+  tabRead.onclick = () => {
+    tabRead.classList.add('active');
+    tabSpeak.classList.remove('active');
+    readTabContent.style.display = '';
+    speakTabContent.style.display = 'none';
+    // Show all settings options in Read tab
+    const sentenceLangInputRow = document.getElementById('sentence-lang-input');
+    const explanationLangInputRow = document.getElementById('explanation-lang-input');
+    const categoryDropdown = document.getElementById('category-dropdown-container');
+    const wordCountInput = document.getElementById('word-count');
+    if (sentenceLangInputRow) sentenceLangInputRow.parentElement.style.display = '';
+    if (explanationLangInputRow) explanationLangInputRow.style.display = '';
+    if (categoryDropdown) categoryDropdown.style.display = '';
+    if (wordCountInput) wordCountInput.style.display = '';
+    // Show explanation icon
+    const explanationIcons = document.querySelectorAll('.fa-comment-dots.language-icon');
+    explanationIcons.forEach(icon => icon.style.display = '');
+  };
+  tabSpeak.onclick = () => {
+    tabSpeak.classList.add('active');
+    tabRead.classList.remove('active');
+    readTabContent.style.display = 'none';
+    speakTabContent.style.display = '';
+    // Only show sentence language input in settings modal
+    const sentenceLangInputRow = document.getElementById('sentence-lang-input');
+    const explanationLangInputRow = document.getElementById('explanation-lang-input');
+    const categoryDropdown = document.getElementById('category-dropdown-container');
+    const wordCountInput = document.getElementById('word-count');
+    if (sentenceLangInputRow) sentenceLangInputRow.parentElement.style.display = '';
+    if (explanationLangInputRow) explanationLangInputRow.style.display = 'none';
+    if (categoryDropdown) categoryDropdown.style.display = 'none';
+    if (wordCountInput) wordCountInput.style.display = 'none';
+    // Hide explanation icon
+    const explanationIcons = document.querySelectorAll('.fa-comment-dots.language-icon');
+    explanationIcons.forEach(icon => icon.style.display = 'none');
+  };
+}
+
+// --- Speak Tab Logic ---
+let recognition = null;
+let recognizing = false;
+let lastTranscript = '';
+
+if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
+  // Hide check button initially
+  speakCheckBtn.style.display = 'none';
+  speakTranscript.textContent = '';
+  speakFeedback.textContent = '';
+
+  // Speech Recognition setup
+  function getSpeechRecognition() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  }
+
+  // Helper to get language code for SpeechRecognition
+  function getSpeechRecognitionLang() {
+    if (!sentenceLangInput) return 'en-US';
+    const lang = sentenceLangInput.value.trim().toLowerCase();
+    const langMap = {
+      'english': 'en-US',
+      'spanish': 'es-ES',
+      'french': 'fr-FR',
+      'hindi': 'hi-IN',
+      'german': 'de-DE',
+      'italian': 'it-IT',
+      'russian': 'ru-RU',
+      'chinese': 'zh-CN',
+      'japanese': 'ja-JP',
+      'korean': 'ko-KR',
+      // add more as needed
+    };
+    if (langMap[lang]) return langMap[lang];
+    // Try startsWith for language codes
+    if (lang.startsWith('en')) return 'en-US';
+    if (lang.startsWith('es')) return 'es-ES';
+    if (lang.startsWith('fr')) return 'fr-FR';
+    if (lang.startsWith('hi')) return 'hi-IN';
+    if (lang.startsWith('de')) return 'de-DE';
+    if (lang.startsWith('it')) return 'it-IT';
+    if (lang.startsWith('ru')) return 'ru-RU';
+    if (lang.startsWith('zh')) return 'zh-CN';
+    if (lang.startsWith('ja')) return 'ja-JP';
+    if (lang.startsWith('ko')) return 'ko-KR';
+    return 'en-US';
+  }
+
+  speakRecordBtn.onclick = () => {
+    if (recognizing) {
+      recognition.stop();
+      return;
+    }
+    const SR = getSpeechRecognition();
+    if (!SR) {
+      showSnackbar('Speech recognition not supported in this browser.');
+      return;
+    }
+    recognition = new SR();
+    recognition.lang = getSpeechRecognitionLang();
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognizing = true;
+    speakTranscript.textContent = 'Listening...';
+    speakFeedback.textContent = '';
+    speakCheckBtn.style.display = 'none';
+    speakRecordBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript.trim();
+      lastTranscript = transcript;
+      speakTranscript.textContent = transcript;
+      speakCheckBtn.style.display = '';
+      recognizing = false;
+      speakRecordBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+    };
+    recognition.onerror = (event) => {
+      speakTranscript.textContent = '';
+      speakCheckBtn.style.display = 'none';
+      recognizing = false;
+      speakRecordBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+      showSnackbar('Speech recognition error. Try again.');
+    };
+    recognition.onend = () => {
+      if (recognizing) {
+        recognizing = false;
+        speakRecordBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+        if (!lastTranscript) {
+          speakTranscript.textContent = '';
+          speakCheckBtn.style.display = 'none';
+        }
+      }
+    };
+    recognition.start();
+  };
+
+  speakCheckBtn.onclick = async () => {
+    const sentence = lastTranscript;
+    if (!sentence) {
+      showSnackbar('No sentence to check.');
+      return;
+    }
+    speakFeedback.textContent = 'Checking...';
+    const apiKey = getNextApiKey ? getNextApiKey() : null;
+    if (!apiKey) {
+      speakFeedback.textContent = 'Please add at least one API key in settings.';
+      return;
+    }
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
+    let lang = 'English';
+    if (sentenceLangInput && sentenceLangInput.value.trim()) {
+      lang = sentenceLangInput.value.trim();
+    }
+    const prompt = `"${sentence}". Is this a correct ${lang} sentence for *spoken* conversation? Ignore all spelling, capitalization, punctuation, accents, and number formatting (numerals or words). Only focus on grammar, word order, and vocabulary used in casual speech. Do not mention or correct spelling, punctuation, accents, or number formatting. Do not change the script (Devanagari or Latin) of the sentence. If the input is in Devanagari, return the correction in Devanagari. If the input is in Latin, return in Latin. If the sentence is natural for speaking, return it as-is. If it's wrong, return only the corrected version, no extra comments. Be concise.`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+      const data = await response.json();
+      let feedback = '';
+      try {
+        feedback = data.candidates[0].content.parts[0].text.trim();
+      } catch {
+        feedback = "Sorry, couldn't get feedback.";
+      }
+      // Format markdown-like bold (**text**) and newlines
+      let formatted = feedback.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+      formatted = formatted.replace(/\n/g, '<br>');
+
+      // --- Post-processing: compare normalized input and correction ---
+      function normalizeText(str) {
+        return str
+          .toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+          .replace(/[.,\/#!$%^&*;:{}=\-_`~()?¿¡\"'’]/g, '') // remove punctuation
+          .replace(/\s+/g, ' ') // collapse whitespace
+          .trim();
+      }
+      // Try to extract only the corrected sentence from Gemini's response
+      let corrected = '';
+      // Look for: The correct sentence is "..."
+      const match1 = feedback.match(/correct (sentence|version) is\s*[:\-]?\s*"([^"]+)"/i);
+      if (match1) {
+        corrected = match1[2];
+      } else {
+        // Look for: "..." (first quoted string)
+        const match2 = feedback.match(/"([^"]+)"/);
+        if (match2) {
+          corrected = match2[1];
+        } else {
+          // Fallback: just show the whole feedback
+          corrected = feedback;
+        }
+      }
+      // Compare normalized input and correction
+      const normInput = normalizeText(lastTranscript || '');
+      const normCorrection = normalizeText(corrected || '');
+      if (normInput && normCorrection && normInput === normCorrection) {
+        // Show green tick (correct)
+        speakFeedback.innerHTML = `<div class=\"feedback-centered-box\" style=\"padding:24px 0 18px 0;text-align:center;\">\
+          <span class=\"feedback-animated-icon tick\">\
+            <svg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'>\
+              <circle cx='24' cy='24' r='22' stroke='#4CAF50' stroke-width='4' fill='none'/>\
+              <path d='M14 25.5L22 33L34 17' stroke='#4CAF50' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/>\
+            </svg>\
+          </span>\
+        </div>`;
+      } else {
+        // Show red cross and correction
+        speakFeedback.innerHTML = `<div class=\"feedback-centered-box\" style=\"padding:24px 0 18px 0;text-align:center;\">\
+          <span class=\"feedback-animated-icon cross\">\
+            <svg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'>\
+              <circle cx='24' cy='24' r='22' stroke='#e74c3c' stroke-width='4' fill='none'/>\
+              <path d='M17 17L31 31M31 17L17 31' stroke='#e74c3c' stroke-width='4' stroke-linecap='round'/>\
+            </svg>\
+          </span>\
+          <div style='margin-top:18px;font-size:1.15em;font-weight:600;color:#ffd700;'>${corrected}</div>\
+        </div>`;
+      }
+      // Add fade-in animation and box style
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .feedback-animated-icon { display:inline-block; vertical-align:middle; animation: fadeInScale 0.7s cubic-bezier(.4,2,.6,1) both; }
+        @keyframes fadeInScale { from { opacity:0; transform:scale(0.7);} to { opacity:1; transform:scale(1);} }
+        .feedback-centered-box { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 0 18px 0; }
+      `;
+      document.head.appendChild(style);
+    } catch (e) {
+      speakFeedback.textContent = 'Error contacting Gemini API.';
+    }
+  };
 }

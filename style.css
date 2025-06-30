@@ -1156,4 +1156,119 @@ button.recording-active, #clear-all {
   width: 100%;
   max-width: 600px;
 }
+/* Main Read/Speak tabs */
+#main-tabs {
+  margin-bottom: 18px;
+}
+#main-tabs .tab {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--color-blue);
+  border-bottom: 3px solid transparent;
+  background: none;
+  border-radius: 0;
+  padding: 12px 32px 10px 32px;
+  margin: 0;
+  transition: color 0.15s, border-bottom 0.15s;
+}
+#main-tabs .tab.active {
+  color: var(--color-yellow);
+  border-bottom: 3px solid var(--color-yellow);
+}
+
+/* Speak tab content */
+#speak-section {
+  width: 100%;
+  max-width: 98vw;
+  margin: 0 auto 10px auto;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+  padding: 8px 2vw 6px 2vw;
+  background: var(--color-bg-dark);
+  color: var(--color-white);
+  box-sizing: border-box;
+  overflow-x: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.speak-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+  padding-left: 16px;
+  padding-right: 16px;
+  justify-content: center;
+  box-sizing: border-box;
+}
+#speak-transcript {
+  min-height: 32px;
+  font-size: 1.1em;
+  color: var(--color-yellow);
+  text-align: center;
+  width: 100%;
+  word-break: break-word;
+  white-space: pre-line;
+}
+#speak-feedback {
+  margin-top: 18px;
+  font-size: 1em;
+  color: var(--color-text-light);
+  font-family: 'Noto Sans Devanagari', 'Segoe UI', Arial, sans-serif;
+  text-align: center;
+  min-height: 24px;
+  letter-spacing: 0.01em;
+  display: block;
+  white-space: pre-line;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  background: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.feedback-centered-box {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:24px 0 18px 0;
+  background: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  box-sizing: border-box;
+}
+/* Speak tab round icon buttons */
+#speak-record-btn, #speak-check-btn {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  min-height: 56px !important;
+  max-width: 56px !important;
+  max-height: 56px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5em !important;
+  padding: 0 !important;
+  margin: 0 8px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
 
