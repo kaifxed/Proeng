@@ -12,7 +12,10 @@
     <div class="logo-title">
       <i class="fa-solid fa-language fa-2x"></i>
     </div>
-    <button id="api-settings-btn" title="Manage API Keys"><i class="fa-solid fa-key"></i></button>
+    <div class="navbar-actions">
+      <button id="settings-btn" title="Customize sentence options"><i class="fa-solid fa-sliders"></i></button>
+      <button id="api-settings-btn" title="Manage API Keys"><i class="fa-solid fa-key"></i></button>
+    </div>
   </nav>
   
   <!-- API Settings Modal -->
@@ -29,7 +32,7 @@
         </div>
         <div class="add-api-section">
           <input type="text" id="new-api-key" placeholder="Enter your Gemini API key..." />
-          <button id="add-api-key">Add Key</button>
+          <button id="add-api-key"><i class="fa-solid fa-plus"></i></button>
         </div>
         <div class="api-status">
           <span id="api-count">0 keys added</span>
@@ -38,46 +41,73 @@
       </div>
     </div>
   </div>
+
+  <!-- Settings Modal for language/category/word count -->
+  <div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Customize Sentence Options</h3>
+        <button id="close-settings-modal" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="language-row">
+          <i class="fa-solid fa-globe language-icon" title="Sentence language"></i>
+          <input type="text" id="sentence-lang-input" class="language-input" placeholder="e.g. English, Hindi, Spanish" />
+          <i class="fa-solid fa-comment-dots language-icon" title="Explanation language"></i>
+          <input type="text" id="explanation-lang-input" class="language-input" placeholder="e.g. English, Hindi, Spanish" />
+        </div>
+        <div class="category-row">
+          <div id="category-dropdown-container" class="category-dropdown-container"></div>
+          <input type="number" id="word-count" class="word-count-input" min="3" max="49" placeholder="Number of words (3-49)" />
+        </div>
+        <div id="add-category-container" class="add-category-container">
+          <input type="text" id="new-category-input" class="new-category-input" placeholder="New category name..." />
+          <button id="add-category-btn" class="add-category-btn"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
   <main>
     <section id="sentence-section">
-      <div id="sentence-box">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:10px;">
-          <select id="sentence-type" style="padding:6px 12px;border-radius:8px;font-size:1em;">
-            <option value="general" selected>General conversational sentences</option>
-            <option value="vocab">Sentences with good and new vocabulary</option>
-            <option value="indian">Correct sentences which most Indian people say wrong</option>
-            <option value="custom">Custom sentences (enter your own prompt)</option>
-          </select>
-          <select id="word-count" style="padding:6px 12px;border-radius:8px;font-size:1em;">
-            <option value="short" selected>Short (5-10 words)</option>
-            <option value="medium">Medium (10-20 words)</option>
-            <option value="long">Long (20-30 words)</option>
-          </select>
-          <input id="custom-prompt" type="text" placeholder="Enter your custom prompt..." style="display:none;padding:6px 12px;border-radius:8px;font-size:1em;width:260px;max-width:90vw;" />
+      <div id="sentence-box" class="sentence-box">
+        <div class="sentence-controls">
+          <!-- Only keep the generate sentence, translation, and action buttons here -->
         </div>
-        <p id="sentence" class="highlight">Click <b>Get Sentence</b> to start!</p>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
+          <p id="sentence" class="highlight" style="margin-bottom: 0;">Click <b>Get Sentence</b> to start!</p>
+          <button id="save-sentence-btn" title="Save this sentence" aria-label="Save sentence"><i class="fa-solid fa-bookmark"></i></button>
+        </div>
+        <div class="sentence-actions-row" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 12px; width: 100%;">
+          <div class="sentence-actions-group">
+            <button id="speak-sentence" class="speak-btn" title="Speak sentence"><i class="fa-solid fa-volume-up"></i></button>
+            <button id="translate-btn" title="Show simple English explanation"><i class="fa-solid fa-lightbulb"></i></button>
+            <button id="word-by-word-btn" title="Explain key words in detail"><i class="fa-solid fa-list-ul"></i></button>
+          </div>
+          <button id="get-sentence" class="generate-btn"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+        </div>
         <div id="translation" class="translation"></div>
-        <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:8px;">
-          <button id="speak-sentence" class="speak-btn" title="Speak sentence"><i class="fa-solid fa-volume-up"></i></button>
-          <button id="translate-btn" title="Show simple English explanation"><i class="fa-solid fa-lightbulb"></i> Explain</button>
-          <button id="word-by-word-btn" title="Explain key words in detail"><i class="fa-solid fa-list-ul"></i> Word by Word</button>
-          <button id="get-sentence"><i class="fa-solid fa-wand-magic-sparkles"></i> Get Sentence</button>
-        </div>
       </div>
     </section>
     <section id="recorder-section">
       <div id="recorder">
-        <button id="record"><i class="fa-solid fa-microphone"></i> Record</button>
-        <span id="recording-indicator" style="display:none;"><i class="fa-solid fa-circle-dot fa-beat" style="color:#e74c3c;"></i> Recording...</span>
-        <button id="save" disabled><i class="fa-solid fa-floppy-disk"></i> Save</button>
+        <button id="record"><i class="fa-solid fa-microphone"></i></button>
+        <span id="recording-indicator">
+          <i class="fa-solid fa-circle-dot icon-red icon-beat"></i> Recording...
+        </span>
+        <button id="save" disabled><i class="fa-solid fa-floppy-disk"></i></button>
       </div>
     </section>
     <section id="recordings-section">
       <div class="recordings-header">
-        <h2>Saved Recordings</h2>
-        <input id="search-bar" type="text" placeholder="Search recordings..." aria-label="Search recordings">
       </div>
+      <div id="recordings-tabs" class="tabs-bar">
+        <button id="tab-recordings" class="tab active">Saved Recordings</button>
+        <button id="tab-sentences" class="tab">Saved Sentences</button>
+      </div>
+      <input id="search-bar" type="text" placeholder="Search recordings..." aria-label="Search recordings" style="margin-bottom: 10px;">
+      <input id="search-sentences-bar" type="text" placeholder="Search saved sentences..." aria-label="Search saved sentences" style="display:none; margin-bottom: 10px;">
       <ul id="recordings-list"></ul>
+      <ul id="saved-sentences-list" style="display:none;"></ul>
     </section>
     <button id="clear-all" title="Clear all recordings"><i class="fa-solid fa-trash"></i></button>
     <div id="snackbar" aria-live="polite"></div>

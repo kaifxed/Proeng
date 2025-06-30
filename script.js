@@ -129,6 +129,9 @@ window.onclick = (event) => {
   if (event.target === apiModal) {
     apiModal.style.display = 'none';
   }
+  if (event.target === settingsModal) {
+    settingsModal.style.display = 'none';
+  }
 };
 
 // Enter key to add API key
@@ -138,37 +141,347 @@ document.getElementById('new-api-key').onkeypress = (e) => {
   }
 };
 
-sentenceTypeSelect.onchange = function() {
-  if (sentenceTypeSelect.value === 'custom') {
-    customPromptInput.style.display = '';
+// --- Category Management ---
+const categoryDropdownContainer = document.getElementById('category-dropdown-container');
+const addCategoryContainer = document.getElementById('add-category-container');
+const newCategoryInput = document.getElementById('new-category-input');
+const addCategoryBtn = document.getElementById('add-category-btn');
+
+let categories = [];
+let selectedCategoryValue = null;
+let isEditing = false;
+const DEFAULT_CATEGORIES = [
+  // Empty array - no default categories
+];
+
+function loadCategories() {
+  const saved = localStorage.getItem('sentenceCategories');
+  if (saved) {
+    categories = JSON.parse(saved);
   } else {
-    customPromptInput.style.display = 'none';
+    categories = DEFAULT_CATEGORIES.slice();
+    saveCategories();
   }
+  // Load selected category from localStorage
+  const savedSelected = localStorage.getItem('selectedCategory');
+  if (savedSelected && categories.find(cat => cat.value === savedSelected)) {
+    selectedCategoryValue = savedSelected;
+  } else {
+    selectedCategoryValue = categories[0]?.value || null;
+  }
+}
+function saveCategories() {
+  localStorage.setItem('sentenceCategories', JSON.stringify(categories));
+}
+function setSelectedCategory(value) {
+  selectedCategoryValue = value;
+  localStorage.setItem('selectedCategory', value); // Persist selected category
+  renderCategoryDropdown();
+}
+function renderCategoryDropdown() {
+  categoryDropdownContainer.innerHTML = '';
+  const dropdown = document.createElement('div');
+  dropdown.className = 'custom-dropdown';
+  dropdown.style.position = 'relative';
+  dropdown.style.width = '100%';
+
+  // Selected display
+  const selected = document.createElement('div');
+  selected.className = 'selected-category';
+  selected.style.padding = '8px 14px';
+  selected.style.borderRadius = '8px';
+  selected.style.border = '1.5px solid #444';
+  selected.style.background = '#23272f';
+  selected.style.color = '#ffd700';
+  selected.style.fontSize = '1em';
+  selected.style.cursor = 'pointer';
+  selected.style.display = 'flex';
+  selected.style.alignItems = 'center';
+  selected.style.justifyContent = 'space-between';
+  selected.tabIndex = 0;
+  const selCat = categories.find(cat => cat.value === selectedCategoryValue) || categories[0];
+  selected.textContent = selCat ? selCat.label : 'Select category';
+  const arrow = document.createElement('span');
+  arrow.innerHTML = '<i class="fa fa-chevron-down"></i>';
+  arrow.style.marginLeft = '8px';
+  selected.appendChild(arrow);
+  dropdown.appendChild(selected);
+
+  // Dropdown list
+  const list = document.createElement('div');
+  list.className = 'dropdown-list';
+  list.style.position = 'absolute';
+  list.style.top = '110%';
+  list.style.left = '0';
+  list.style.width = '100%';
+  list.style.background = '#23272f';
+  list.style.border = '1.5px solid #444';
+  list.style.borderRadius = '8px';
+  list.style.boxShadow = '0 2px 8px rgba(0,0,0,0.13)';
+  list.style.zIndex = '20';
+  list.style.display = 'none';
+  list.style.maxHeight = '220px';
+  list.style.overflowY = 'auto';
+
+  // Render categories
+  categories.forEach(cat => {
+    const item = document.createElement('div');
+    item.className = 'dropdown-item';
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.justifyContent = 'space-between';
+    item.style.padding = '8px 12px';
+    item.style.cursor = 'pointer';
+    item.style.color = '#ffd700';
+    item.style.background = (cat.value === selectedCategoryValue) ? '#2a2f3a' : 'transparent';
+    item.style.fontWeight = (cat.value === selectedCategoryValue) ? '700' : '500';
+    item.tabIndex = 0;
+    // Category label
+    const label = document.createElement('span');
+    label.textContent = cat.label;
+    label.style.flex = '1';
+    label.onclick = () => {
+      if (!isEditing) {
+        setSelectedCategory(cat.value);
+        list.style.display = 'none';
+      }
+    };
+    item.appendChild(label);
+    // Edit/delete buttons for all categories
+    // Edit
+    const editBtn = document.createElement('button');
+    editBtn.innerHTML = '<i class="fa fa-pen"></i>';
+    editBtn.title = 'Edit';
+    editBtn.style.background = 'none';
+    editBtn.style.border = 'none';
+    editBtn.style.color = '#4CAF50';
+    editBtn.style.marginRight = '6px';
+    editBtn.style.cursor = 'pointer';
+    editBtn.onclick = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      isEditing = true;
+      // Inline edit
+      label.style.display = 'none';
+      editBtn.style.display = 'none';
+      deleteBtn.style.display = 'none';
+      
+      // Create input container for inline editing
+      const inputContainer = document.createElement('div');
+      inputContainer.style.display = 'flex';
+      inputContainer.style.alignItems = 'center';
+      inputContainer.style.gap = '6px';
+      inputContainer.style.flex = '1';
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = cat.label;
+      input.style.flex = '1';
+      input.style.padding = '4px 8px';
+      input.style.borderRadius = '6px';
+      input.style.fontSize = '1em';
+      input.style.background = '#fff';
+      input.style.color = '#000';
+      input.style.border = '1px solid #007bff';
+      
+      // Confirm button
+      const confirmBtn = document.createElement('button');
+      confirmBtn.innerHTML = '<i class="fa fa-check"></i>';
+      confirmBtn.title = 'Save';
+      confirmBtn.style.background = '#4CAF50';
+      confirmBtn.style.color = '#fff';
+      confirmBtn.style.border = 'none';
+      confirmBtn.style.borderRadius = '6px';
+      confirmBtn.style.padding = '6px 8px';
+      confirmBtn.style.cursor = 'pointer';
+      confirmBtn.style.fontSize = '0.9em';
+      
+      // Cancel button
+      const cancelBtn = document.createElement('button');
+      cancelBtn.innerHTML = '<i class="fa fa-times"></i>';
+      cancelBtn.title = 'Cancel';
+      cancelBtn.style.background = '#e74c3c';
+      cancelBtn.style.color = '#fff';
+      cancelBtn.style.border = 'none';
+      cancelBtn.style.borderRadius = '6px';
+      cancelBtn.style.padding = '6px 8px';
+      cancelBtn.style.cursor = 'pointer';
+      cancelBtn.style.fontSize = '0.9em';
+      
+      input.onkeydown = (ev) => {
+        if (ev.key === 'Enter') {
+          finishEdit();
+        } else if (ev.key === 'Escape') {
+          cancelEdit();
+        }
+      };
+      input.onblur = () => {
+        // Don't auto-cancel on blur anymore since we have buttons
+      };
+      
+      confirmBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        finishEdit();
+      };
+      
+      cancelBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        cancelEdit();
+      };
+      
+      inputContainer.appendChild(input);
+      inputContainer.appendChild(confirmBtn);
+      inputContainer.appendChild(cancelBtn);
+      item.insertBefore(inputContainer, item.firstChild);
+      input.focus();
+      input.select();
+      
+      function finishEdit() {
+        const newName = input.value.trim();
+        if (!newName) {
+          showSnackbar('Category name cannot be empty.');
+          return;
+        }
+        if (categories.some(c => c.label.toLowerCase() === newName.toLowerCase() && c.value !== cat.value)) {
+          showSnackbar('Category already exists.');
+          return;
+        }
+        cat.label = newName;
+        saveCategories();
+        isEditing = false;
+        renderCategoryDropdown();
+      }
+      function cancelEdit() {
+        isEditing = false;
+        renderCategoryDropdown();
+      }
+    };
+    item.appendChild(editBtn);
+    // Delete
+    const deleteBtn = document.createElement('button');
+    deleteBtn.innerHTML = '<i class="fa fa-times"></i>';
+    deleteBtn.title = 'Delete';
+    deleteBtn.style.background = 'none';
+    deleteBtn.style.border = 'none';
+    deleteBtn.style.color = '#e74c3c';
+    deleteBtn.style.cursor = 'pointer';
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (confirm('Delete this category?')) {
+        removeCategory(cat.value);
+        list.style.display = 'none';
+      }
+    };
+    item.appendChild(deleteBtn);
+    list.appendChild(item);
+  });
+  // Add Category option
+  const addItem = document.createElement('div');
+  addItem.className = 'dropdown-item';
+  addItem.style.padding = '8px 12px';
+  addItem.style.cursor = 'pointer';
+  addItem.style.color = '#007bff';
+  addItem.style.fontWeight = '600';
+  addItem.textContent = '+ Add Category...';
+  addItem.onclick = () => {
+    if (!isEditing) {
+      list.style.display = 'none';
+      showAddCategoryInput(true);
+    }
+  };
+  list.appendChild(addItem);
+
+  dropdown.appendChild(list);
+  categoryDropdownContainer.appendChild(dropdown);
+
+  // Dropdown open/close logic
+  let dropdownOpen = false;
+  selected.onclick = (e) => {
+    if (!isEditing) {
+      list.style.display = (list.style.display === 'none' || !list.style.display) ? 'block' : 'none';
+      dropdownOpen = list.style.display === 'block';
+    }
+  };
+
+  // Add document mousedown listener to close dropdown when clicking outside
+  function handleOutsideClick(event) {
+    if (!dropdown.contains(event.target)) {
+      list.style.display = 'none';
+      dropdownOpen = false;
+      document.removeEventListener('mousedown', handleOutsideClick);
+    }
+  }
+  selected.addEventListener('click', function(e) {
+    if (!isEditing && list.style.display === 'block') {
+      // Wait a tick to allow click on dropdown items
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleOutsideClick);
+      }, 0);
+    }
+  });
+}
+function showAddCategoryInput(show) {
+  addCategoryContainer.style.display = show ? 'flex' : 'none';
+  if (show) newCategoryInput.focus();
+}
+addCategoryBtn.onclick = function() {
+  const name = newCategoryInput.value.trim();
+  if (!name) {
+    showSnackbar('Enter a category name.');
+    return;
+  }
+  // Prevent duplicates
+  if (categories.some(cat => cat.label.toLowerCase() === name.toLowerCase())) {
+    showSnackbar('Category already exists.');
+    return;
+  }
+  // Generate a safe value
+  const value = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  categories.push({ value, label: name, promptType: 'general' });
+  saveCategories();
+  setSelectedCategory(value);
+  showAddCategoryInput(false);
+  newCategoryInput.value = '';
+  showSnackbar('Category added!');
 };
+newCategoryInput.onkeypress = function(e) {
+  if (e.key === 'Enter') addCategoryBtn.onclick();
+};
+function removeCategory(value) {
+  const idx = categories.findIndex(cat => cat.value === value);
+  if (idx > -1) {
+    categories.splice(idx, 1);
+    saveCategories();
+    if (selectedCategoryValue === value) {
+      setSelectedCategory(categories[0]?.value || null);
+    } else {
+      renderCategoryDropdown();
+    }
+    showSnackbar('Category removed.');
+  }
+}
+// Call on load
+loadCategories();
+renderCategoryDropdown();
 
 async function getRandomSentence() {
   const apiKey = getNextApiKey();
   if (!apiKey) {
     return "Please add at least one API key in settings (click the key icon in the top right).";
   }
-  
   const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
-
-  const wordCount = wordCountSelect.value;
-  let wordCountInstruction = "";
-  if (wordCount === 'short') {
-    wordCountInstruction = "Make it short (5-10 words). ";
-  } else if (wordCount === 'medium') {
-    wordCountInstruction = "Make it medium length (10-20 words). ";
-  } else if (wordCount === 'long') {
-    wordCountInstruction = "Make it long (20-30 words). ";
+  const wordCountInput = document.getElementById('word-count');
+  let wordCount = parseInt(wordCountInput.value, 10);
+  if (isNaN(wordCount) || wordCount < 3 || wordCount > 49) {
+    showSnackbar('Please enter a number of words between 3 and 49.');
+    return;
   }
-
-  // Add a random seed for uniqueness
+  let wordCountInstruction = `Make it about ${wordCount} words. `;
   const randomSeed = Math.floor(Math.random() * 1000000) + '-' + Date.now();
   const seedInstruction = `Use this random seed for uniqueness: [${randomSeed}].`;
-  
-  // Add simple context for variety without being too random
   const simpleContexts = [
     'talking to a friend',
     'at work or office',
@@ -181,37 +494,18 @@ async function getRandomSentence() {
     'making small talk',
     'expressing feelings'
   ];
-  
   const randomContext = simpleContexts[Math.floor(Math.random() * simpleContexts.length)];
   const contextInstruction = `Context: ${randomContext}.`;
-
-  let prompt = `Give me one simple, natural English sentence that people actually use in everyday conversations. ${wordCountInstruction}${seedInstruction} ${contextInstruction} Make it casual and conversational - like what friends, family, or colleagues would say to each other. Use simple, common words that everyone knows. Write exactly how people talk in real conversations. Make it practical and meaningful. Only output the sentence, nothing else.`;
-  const type = sentenceTypeSelect.value;
-  
-  // Debug logging
-  console.log('Selected type:', type);
-  console.log('Word count:', wordCount);
-  
-  if (type === 'vocab') {
-    prompt = `Give me one natural English sentence that uses slightly more interesting vocabulary but is still conversational. ${wordCountInstruction}${seedInstruction} ${contextInstruction} Use words that are a bit more advanced than basic but still commonly used in everyday speech. Include maybe one or two interesting words or phrases that people actually use in conversations. Keep it natural and practical. Only output the sentence, nothing else.`;
-    console.log('Using vocab prompt');
-  } else if (type === 'indian') {
-    prompt = `Give me one simple, correct English sentence that you think i might be saying wrong. ${wordCountInstruction}${seedInstruction} ${contextInstruction} Make it conversational and natural - like what people actually say in daily life. Focus on common mistakes with articles, prepositions, verb tenses, or word order that Indian speakers make. Use simple, everyday language. Make it practical and meaningful. Only output the correct sentence, nothing else.`;
-    console.log('Using indian prompt');
-  } else if (type === 'custom') {
-    const custom = customPromptInput.value.trim();
-    if (!custom) {
-      showSnackbar('Please enter your custom prompt.');
-      return '';
-    }
-    prompt = `Generate a sentence similar to this example: "${custom}". ${wordCountInstruction}${seedInstruction} ${contextInstruction} Make it similar in style, topic, or structure to the example sentence. Keep it conversational and natural - like what people actually say in everyday conversations. Use common words and natural language. Make it practical and meaningful. Only output the new sentence, nothing else.`;
-    console.log('Using custom prompt with:', custom);
+  const sentenceLang = document.getElementById('sentence-lang-input').value.trim() || 'English';
+  let prompt = '';
+  const type = selectedCategoryValue;
+  // Find the category object
+  const catObj = categories.find(cat => cat.value === type);
+  if (catObj) {
+    prompt = `Give me one simple, natural sentence for the category '${catObj.label}'. Generate the sentence in ${sentenceLang}. ${wordCountInstruction}${seedInstruction} ${contextInstruction} Make it casual and conversational. Only output the sentence, nothing else.`;
   } else {
-    console.log('Using general prompt (default)');
+    prompt = `Give me one simple, natural sentence that people actually use in everyday conversations. Generate the sentence in ${sentenceLang}. ${wordCountInstruction}${seedInstruction} ${contextInstruction} Make it casual and conversational. Only output the sentence, nothing else.`;
   }
-
-  console.log('Final prompt:', prompt);
-
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -219,7 +513,6 @@ async function getRandomSentence() {
       contents: [{ parts: [{ text: prompt }] }]
     })
   });
-
   const data = await response.json();
   try {
     return data.candidates[0].content.parts[0].text.trim();
@@ -238,9 +531,9 @@ async function getEnglishExplanation(englishSentence) {
   if (!apiKey) {
     return "Please add at least one API key in settings.";
   }
-  
   const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
-  const prompt = `Explain this English sentence in simple, clear terms that a language learner can easily understand. Keep it short and direct. Only output the explanation, nothing else: ${englishSentence}`;
+  const explanationLang = document.getElementById('explanation-lang-input').value.trim() || 'English';
+  const prompt = `Explain this sentence in very short, simple, and clear terms that a language learner can easily understand. Be concise and to the point, avoid unnecessary details. Explain in ${explanationLang}. Only output the explanation, nothing else: ${englishSentence}`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -261,12 +554,12 @@ async function getWordByWordExplanation(englishSentence) {
   if (!apiKey) {
     return "Please add at least one API key in settings.";
   }
-  
   const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
-  const prompt = `Analyze this English sentence and explain the key words/phrases in simple terms. Focus on important vocabulary, idioms, phrasal verbs, or complex words. Format as bullet points with short, clear explanations. Use this exact format:
+  const explanationLang = document.getElementById('explanation-lang-input').value.trim() || 'English';
+  const prompt = `Analyze this sentence and explain the key words/phrases in very short, simple terms. Focus only on the most important vocabulary, idioms, or complex words. Format as bullet points with very short, clear explanations. Be concise and to the point. Use this exact format:
 • "word/phrase" - explanation
 • "word/phrase" - explanation
-Only output the bullet points, nothing else: ${englishSentence}`;
+Explain in ${explanationLang}. Only output the bullet points, nothing else: ${englishSentence}`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -277,9 +570,7 @@ Only output the bullet points, nothing else: ${englishSentence}`;
   const data = await response.json();
   try {
     let result = data.candidates[0].content.parts[0].text.trim();
-    // Ensure proper formatting if the AI doesn't format correctly
     if (!result.includes('•')) {
-      // If no bullet points, try to format the response
       const lines = result.split('\n').filter(line => line.trim());
       result = lines.map(line => {
         if (line.trim() && !line.startsWith('•')) {
@@ -303,6 +594,7 @@ const recordingsList = document.getElementById("recordings-list");
 const recordingIndicator = document.getElementById("recording-indicator");
 const snackbar = document.getElementById("snackbar");
 const searchBar = document.getElementById("search-bar");
+const searchSentencesBar = document.getElementById('search-sentences-bar');
 const clearAllBtn = document.getElementById("clear-all");
 
 // --- State ---
@@ -336,11 +628,13 @@ function showUnsavedAudioPlayer(audioBlob) {
       <button class="playpause" aria-label="Play/Pause"><i class="fa-solid fa-play"></i></button>
       <input type="range" min="0" max="100" value="0" class="audio-slider" aria-label="Seek">
       <span class="audio-time">0:00 / 0:00</span>
+      <button class="delete-unsaved" title="Delete unsaved audio" aria-label="Delete unsaved audio"><i class="fa-solid fa-trash"></i></button>
     </div>
   `;
   const playpauseBtn = unsavedAudioContainer.querySelector('.playpause');
   const slider = unsavedAudioContainer.querySelector('.audio-slider');
   const timeDisplay = unsavedAudioContainer.querySelector('.audio-time');
+  const deleteUnsavedBtn = unsavedAudioContainer.querySelector('.delete-unsaved');
 
   audio.addEventListener('loadedmetadata', () => {
     duration = audio.duration;
@@ -380,6 +674,13 @@ function showUnsavedAudioPlayer(audioBlob) {
     timeDisplay.textContent = `0:00 / ${formatTime(duration)}`;
   });
 
+  // Delete/clear unsaved audio
+  deleteUnsavedBtn.onclick = () => {
+    clearUnsavedAudioPlayer();
+    saveBtn.disabled = true;
+    showSnackbar('Unsaved audio cleared');
+  };
+
   // Insert below the recorder controls
   const recorderSection = document.getElementById('recorder-section');
   if (recorderSection) {
@@ -401,7 +702,9 @@ getSentenceBtn.onclick = async () => {
   sentenceEl.textContent = "Loading...";
   translationEl.textContent = "";
   sentenceEl.classList.remove("highlight");
-  const sentence = await getRandomSentence();
+  let sentence = await getRandomSentence();
+  // Remove leading/trailing quotes (single, double, curly)
+  sentence = sentence.replace(/^["'""'']+|["'""'']+$/g, '');
   sentenceEl.textContent = sentence;
   sentenceEl.classList.add("highlight");
   // No auto-translation here
@@ -435,7 +738,7 @@ recordBtn.onclick = async () => {
 
     mediaRecorder.start();
     isRecording = true;
-    recordBtn.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
+    recordBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
     recordBtn.classList.add('recording', 'recording-active');
     saveBtn.disabled = true;
     showSnackbar("Recording started");
@@ -443,13 +746,15 @@ recordBtn.onclick = async () => {
     // Stop recording
     mediaRecorder.stop();
     isRecording = false;
-    recordBtn.innerHTML = '<i class="fa-solid fa-microphone"></i> Record';
+    recordBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
     recordBtn.classList.remove('recording', 'recording-active');
   }
 };
 
 // --- Save Recording Locally ---
 saveBtn.onclick = () => {
+  if (saveBtn.disabled) return; // Prevent double save
+  saveBtn.disabled = true;
   const sentence = sentenceEl.textContent;
   const timestamp = new Date().toLocaleString();
   const reader = new FileReader();
@@ -457,11 +762,12 @@ saveBtn.onclick = () => {
     const base64Audio = reader.result;
     const recording = { sentence, audio: base64Audio, timestamp };
     let recordings = JSON.parse(localStorage.getItem("recordings") || "[]");
-    recordings.push(recording);
+    recordings.unshift(recording); // Add new recording to the top
     localStorage.setItem("recordings", JSON.stringify(recordings));
     loadRecordings();
     showSnackbar("Recording saved");
     clearUnsavedAudioPlayer();
+    saveBtn.disabled = true;
   };
   reader.readAsDataURL(audioBlob);
 };
@@ -498,6 +804,7 @@ function addRecordingToList(recording, idx) {
   li.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;">
       <div class="recording-sentence" title="Click to edit" tabindex="0" style="flex:1;">${recording.sentence}</div>
+      <button class="rename" title="Rename" aria-label="Rename"><i class="fa-solid fa-pen"></i></button>
       <button class="speak-btn" title="Speak sentence"><i class="fa-solid fa-volume-up"></i></button>
     </div>
     <hr class="recording-divider">
@@ -505,7 +812,6 @@ function addRecordingToList(recording, idx) {
       <button class="playpause" aria-label="Play/Pause"><i class="fa-solid fa-play"></i></button>
       <input type="range" min="0" max="100" value="0" class="audio-slider" aria-label="Seek">
       <span class="audio-time">0:00 / 0:00</span>
-      <button class="rename" title="Rename" aria-label="Rename"><i class="fa-solid fa-pen"></i></button>
       <button class="delete" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
     </div>
     <span style="font-size:0.85em;color:#888;">${recording.timestamp}</span>
@@ -585,10 +891,6 @@ function addRecordingToList(recording, idx) {
     }
   };
 
-  // Also allow editing by clicking the sentence
-  sentenceDiv.onclick = renameBtn.onclick;
-  sentenceDiv.onkeydown = (e) => { if (e.key === 'Enter') renameBtn.onclick(); };
-
   recordingsList.appendChild(li);
 }
 
@@ -596,13 +898,17 @@ function loadRecordings() {
   recordingsList.innerHTML = "";
   let recordings = JSON.parse(localStorage.getItem("recordings") || "[]");
   allRecordings = recordings;
-  const recordingsSection = document.getElementById('recordings-section');
   const clearAllBtn = document.getElementById('clear-all');
   if (recordings.length === 0) {
-    if (recordingsSection) recordingsSection.style.display = 'none';
     if (clearAllBtn) clearAllBtn.style.display = 'none';
+    // Show 'No recordings found.' message in the list area
+    const li = document.createElement('li');
+    li.textContent = 'No recordings found.';
+    li.style.textAlign = 'center';
+    li.style.color = '#888';
+    li.style.padding = '18px 0';
+    recordingsList.appendChild(li);
   } else {
-    if (recordingsSection) recordingsSection.style.display = '';
     if (clearAllBtn) clearAllBtn.style.display = '';
     filterAndDisplayRecordings();
   }
@@ -612,7 +918,8 @@ function filterAndDisplayRecordings() {
   const query = (searchBar.value || "").toLowerCase();
   recordingsList.innerHTML = "";
   let hasAny = false;
-  allRecordings.forEach((rec, idx) => {
+  // Show newest first
+  allRecordings.slice().forEach((rec, idx) => {
     if (
       rec.sentence.toLowerCase().includes(query) ||
       rec.timestamp.toLowerCase().includes(query)
@@ -621,13 +928,17 @@ function filterAndDisplayRecordings() {
       hasAny = true;
     }
   });
-  const recordingsSection = document.getElementById('recordings-section');
   const clearAllBtn = document.getElementById('clear-all');
   if (!hasAny) {
-    if (recordingsSection) recordingsSection.style.display = 'none';
+    // Show a message in the list area
+    const li = document.createElement('li');
+    li.textContent = 'No recordings found.';
+    li.style.textAlign = 'center';
+    li.style.color = '#888';
+    li.style.padding = '18px 0';
+    recordingsList.appendChild(li);
     if (clearAllBtn) clearAllBtn.style.display = 'none';
   } else {
-    if (recordingsSection) recordingsSection.style.display = '';
     if (clearAllBtn) clearAllBtn.style.display = '';
   }
 }
@@ -678,8 +989,185 @@ wordByWordBtn.onclick = async () => {
   translationEl.textContent = formattedExplanation;
 };
 
+// --- Language and word count persistence ---
+function loadLanguageAndWordCount() {
+  const sentenceLangInput = document.getElementById('sentence-lang-input');
+  const explanationLangInput = document.getElementById('explanation-lang-input');
+  const wordCountInput = document.getElementById('word-count');
+  sentenceLangInput.value = localStorage.getItem('sentenceLang') || 'English';
+  explanationLangInput.value = localStorage.getItem('explanationLang') || 'English';
+  wordCountInput.value = localStorage.getItem('wordCount') || '10';
+  sentenceLangInput.addEventListener('input', () => {
+    localStorage.setItem('sentenceLang', sentenceLangInput.value.trim());
+  });
+  explanationLangInput.addEventListener('input', () => {
+    localStorage.setItem('explanationLang', explanationLangInput.value.trim());
+  });
+  wordCountInput.addEventListener('input', () => {
+    localStorage.setItem('wordCount', wordCountInput.value.trim());
+  });
+}
+
 // --- Init ---
 window.onload = () => {
   loadApiKeys();
   loadRecordings();
+  loadLanguageAndWordCount();
 };
+
+// --- Settings Modal Logic ---
+const settingsModal = document.getElementById('settings-modal');
+const settingsBtn = document.getElementById('settings-btn');
+const closeSettingsModalBtn = document.getElementById('close-settings-modal');
+settingsBtn.onclick = () => {
+  settingsModal.style.display = 'block';
+};
+closeSettingsModalBtn.onclick = () => {
+  settingsModal.style.display = 'none';
+};
+
+// --- Save Generated Sentence (Text Only) ---
+const saveSentenceBtn = document.getElementById('save-sentence-btn');
+const savedSentencesList = document.getElementById('saved-sentences-list');
+
+function getCurrentSentenceData() {
+  const sentence = sentenceEl.textContent.trim();
+  if (!sentence || sentence === "Click Get Sentence to start!" || sentence === "Loading..." || sentence === "Sorry, couldn't fetch a sentence.") {
+    return null;
+  }
+  const timestamp = new Date().toLocaleString();
+  const category = categories.find(cat => cat.value === selectedCategoryValue)?.label || '';
+  return { sentence, timestamp, category };
+}
+
+function loadSavedSentences() {
+  const saved = JSON.parse(localStorage.getItem('savedSentences') || '[]');
+  renderSavedSentences(saved);
+}
+
+function renderSavedSentences(sentences) {
+  savedSentencesList.innerHTML = '';
+  // Filter by search
+  const query = (searchSentencesBar?.value || '').toLowerCase();
+  const filtered = sentences.filter(item =>
+    item.sentence.toLowerCase().includes(query) ||
+    item.timestamp.toLowerCase().includes(query)
+  );
+  if (!filtered.length) {
+    const li = document.createElement('li');
+    li.textContent = 'No saved sentences.';
+    li.style.textAlign = 'center';
+    li.style.color = '#888';
+    li.style.padding = '18px 0';
+    savedSentencesList.appendChild(li);
+    return;
+  }
+  filtered.forEach((item, idx) => {
+    const li = document.createElement('li');
+    li.className = 'saved-sentence-item';
+    li.innerHTML = `
+      <div style="display: flex; flex-direction: column; flex: 1;">
+        <span class="saved-sentence-text">${item.sentence}</span>
+        <span class="saved-sentence-meta">${item.timestamp}</span>
+      </div>
+      <span class="saved-sentence-actions">
+        <button class="copy-saved-sentence" title="Copy sentence" aria-label="Copy"><i class="fa-solid fa-copy"></i></button>
+        <button class="delete-saved-sentence" title="Delete sentence" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+      </span>
+    `;
+    // Copy
+    li.querySelector('.copy-saved-sentence').onclick = () => {
+      navigator.clipboard.writeText(item.sentence);
+      showSnackbar('Sentence copied!');
+    };
+    // Delete
+    li.querySelector('.delete-saved-sentence').onclick = () => {
+      const saved = JSON.parse(localStorage.getItem('savedSentences') || '[]');
+      saved.splice(idx, 1);
+      localStorage.setItem('savedSentences', JSON.stringify(saved));
+      loadSavedSentences();
+      showSnackbar('Sentence deleted');
+    };
+    savedSentencesList.appendChild(li);
+  });
+}
+
+if (saveSentenceBtn) {
+  saveSentenceBtn.onclick = () => {
+    const data = getCurrentSentenceData();
+    if (!data) {
+      showSnackbar('No sentence to save!');
+      return;
+    }
+    let saved = JSON.parse(localStorage.getItem('savedSentences') || '[]');
+    // Prevent duplicate saves
+    if (saved.some(s => s.sentence === data.sentence)) {
+      showSnackbar('Sentence already saved!');
+      return;
+    }
+    saved.unshift(data);
+    localStorage.setItem('savedSentences', JSON.stringify(saved));
+    loadSavedSentences();
+    showSnackbar('Sentence saved!');
+  };
+}
+
+// Load saved sentences on page load
+window.addEventListener('DOMContentLoaded', loadSavedSentences);
+
+// --- Tab switching for recordings/sentences ---
+const tabRecordings = document.getElementById('tab-recordings');
+const tabSentences = document.getElementById('tab-sentences');
+const recordingsListEl = document.getElementById('recordings-list');
+const savedSentencesListEl = document.getElementById('saved-sentences-list');
+const clearAllBtnEl = document.getElementById('clear-all');
+
+function showRecordingsTab() {
+  tabRecordings.classList.add('active');
+  tabSentences.classList.remove('active');
+  recordingsListEl.style.display = '';
+  savedSentencesListEl.style.display = 'none';
+  if (clearAllBtnEl) clearAllBtnEl.style.display = '';
+  if (searchBar) searchBar.style.display = '';
+  if (searchSentencesBar) searchSentencesBar.style.display = 'none';
+  if (clearAllSentencesBtn) clearAllSentencesBtn.style.display = 'none';
+}
+function showSentencesTab() {
+  tabRecordings.classList.remove('active');
+  tabSentences.classList.add('active');
+  recordingsListEl.style.display = 'none';
+  savedSentencesListEl.style.display = '';
+  if (clearAllBtnEl) clearAllBtnEl.style.display = 'none';
+  if (searchBar) searchBar.style.display = 'none';
+  if (searchSentencesBar) searchSentencesBar.style.display = '';
+  if (clearAllSentencesBtn) clearAllSentencesBtn.style.display = '';
+}
+if (tabRecordings && tabSentences) {
+  tabRecordings.onclick = showRecordingsTab;
+  tabSentences.onclick = showSentencesTab;
+}
+// Show recordings tab by default on load
+
+// Search/filter for saved sentences
+if (searchSentencesBar) {
+  searchSentencesBar.oninput = loadSavedSentences;
+}
+
+// --- Clear all saved sentences button ---
+const clearAllSentencesBtn = document.createElement('button');
+clearAllSentencesBtn.id = 'clear-all-sentences';
+clearAllSentencesBtn.title = 'Clear all saved sentences';
+clearAllSentencesBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+clearAllSentencesBtn.style.display = 'none';
+clearAllSentencesBtn.style.margin = '18px auto 0 auto';
+clearAllSentencesBtn.onclick = () => {
+  if (confirm('Are you sure you want to delete all saved sentences?')) {
+    localStorage.removeItem('savedSentences');
+    loadSavedSentences();
+    showSnackbar('All saved sentences cleared');
+  }
+};
+// Insert after saved sentences list
+if (savedSentencesListEl && savedSentencesListEl.parentNode) {
+  savedSentencesListEl.parentNode.insertBefore(clearAllSentencesBtn, savedSentencesListEl.nextSibling);
+}
