@@ -1271,4 +1271,32 @@ button.recording-active, #clear-all {
   margin-left: auto !important;
   margin-right: auto !important;
 }
+.speak-edit-btn {
+  color: #ffd700;
+  transition: color 0.2s;
+}
+.speak-edit-btn:hover {
+  color: #fffbe0;
+}
+#speak-edit-input {
+  border: 1.5px solid #ffd700;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 1.1em;
+  min-width: 120px;
+  max-width: 320px;
+  outline: none;
+  background: #23272f;
+  color: #ffd700;
+}
+#speak-edit-input:focus {
+  border-color: #fffbe0;
+}
+#speak-edit-confirm {
+  color: #4CAF50;
+  transition: color 0.2s;
+}
+#speak-edit-confirm:hover {
+  color: #388e3c;
+}
 

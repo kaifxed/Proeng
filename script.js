@@ -1246,11 +1246,18 @@ let recognition = null;
 let recognizing = false;
 let lastTranscript = '';
 
+const speakEditBtn = document.getElementById('speak-edit-btn');
+const speakEditInput = document.getElementById('speak-edit-input');
+const speakEditConfirm = document.getElementById('speak-edit-confirm');
+
 if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
   // Hide check button initially
   speakCheckBtn.style.display = 'none';
   speakTranscript.textContent = '';
   speakFeedback.textContent = '';
+  if (speakEditBtn) speakEditBtn.style.display = 'none';
+  if (speakEditInput) speakEditInput.style.display = 'none';
+  if (speakEditConfirm) speakEditConfirm.style.display = 'none';
 
   // Speech Recognition setup
   function getSpeechRecognition() {
@@ -1307,18 +1314,27 @@ if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
     speakTranscript.textContent = 'Listening...';
     speakFeedback.textContent = '';
     speakCheckBtn.style.display = 'none';
+    if (speakEditBtn) speakEditBtn.style.display = 'none';
+    if (speakEditInput) speakEditInput.style.display = 'none';
+    if (speakEditConfirm) speakEditConfirm.style.display = 'none';
     speakRecordBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.trim();
       lastTranscript = transcript;
       speakTranscript.textContent = transcript;
       speakCheckBtn.style.display = '';
+      if (speakEditBtn) speakEditBtn.style.display = '';
+      if (speakEditInput) speakEditInput.style.display = 'none';
+      if (speakEditConfirm) speakEditConfirm.style.display = 'none';
       recognizing = false;
       speakRecordBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
     };
     recognition.onerror = (event) => {
       speakTranscript.textContent = '';
       speakCheckBtn.style.display = 'none';
+      if (speakEditBtn) speakEditBtn.style.display = 'none';
+      if (speakEditInput) speakEditInput.style.display = 'none';
+      if (speakEditConfirm) speakEditConfirm.style.display = 'none';
       recognizing = false;
       speakRecordBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
       showSnackbar('Speech recognition error. Try again.');
@@ -1330,11 +1346,49 @@ if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
         if (!lastTranscript) {
           speakTranscript.textContent = '';
           speakCheckBtn.style.display = 'none';
+          if (speakEditBtn) speakEditBtn.style.display = 'none';
+          if (speakEditInput) speakEditInput.style.display = 'none';
+          if (speakEditConfirm) speakEditConfirm.style.display = 'none';
         }
       }
     };
     recognition.start();
   };
+
+  // --- Edit transcript logic ---
+  if (speakEditBtn && speakEditInput && speakEditConfirm) {
+    speakEditBtn.onclick = () => {
+      speakEditInput.value = lastTranscript;
+      speakEditInput.style.display = '';
+      speakEditConfirm.style.display = '';
+      speakTranscript.style.display = 'none';
+      speakEditBtn.style.display = 'none';
+      speakEditInput.focus();
+      speakEditInput.select();
+    };
+    speakEditInput.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        speakEditConfirm.click();
+      } else if (e.key === 'Escape') {
+        speakEditInput.style.display = 'none';
+        speakEditConfirm.style.display = 'none';
+        speakTranscript.style.display = '';
+        speakEditBtn.style.display = '';
+      }
+    };
+    speakEditConfirm.onclick = () => {
+      const newText = speakEditInput.value.trim();
+      if (newText) {
+        lastTranscript = newText;
+        speakTranscript.textContent = newText;
+        speakTranscript.style.display = '';
+        speakEditBtn.style.display = '';
+        speakEditInput.style.display = 'none';
+        speakEditConfirm.style.display = 'none';
+        showSnackbar('Sentence updated.');
+      }
+    };
+  }
 
   speakCheckBtn.onclick = async () => {
     const sentence = lastTranscript;
