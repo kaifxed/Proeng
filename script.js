@@ -808,6 +808,38 @@ saveBtn.onclick = () => {
 };
 
 // --- Speech Synthesis for Pronouncing Sentences ---
+function getSpeechSynthesisLang() {
+  const sentenceLangInput = document.getElementById('sentence-lang-input');
+  if (!sentenceLangInput) return 'en-US';
+  const lang = sentenceLangInput.value.trim().toLowerCase();
+  const langMap = {
+    'english': 'en-US',
+    'spanish': 'es-ES',
+    'french': 'fr-FR',
+    'hindi': 'hi-IN',
+    'german': 'de-DE',
+    'italian': 'it-IT',
+    'russian': 'ru-RU',
+    'chinese': 'zh-CN',
+    'japanese': 'ja-JP',
+    'korean': 'ko-KR',
+    // add more as needed
+  };
+  if (langMap[lang]) return langMap[lang];
+  // Try startsWith for language codes
+  if (lang.startsWith('en')) return 'en-US';
+  if (lang.startsWith('es')) return 'es-ES';
+  if (lang.startsWith('fr')) return 'fr-FR';
+  if (lang.startsWith('hi')) return 'hi-IN';
+  if (lang.startsWith('de')) return 'de-DE';
+  if (lang.startsWith('it')) return 'it-IT';
+  if (lang.startsWith('ru')) return 'ru-RU';
+  if (lang.startsWith('zh')) return 'zh-CN';
+  if (lang.startsWith('ja')) return 'ja-JP';
+  if (lang.startsWith('ko')) return 'ko-KR';
+  return 'en-US';
+}
+
 function speakText(text) {
   if (!window.speechSynthesis) {
     showSnackbar('Speech synthesis not supported in this browser.');
@@ -815,7 +847,7 @@ function speakText(text) {
   }
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'en-US';
+  utter.lang = getSpeechSynthesisLang(); // Use the correct language!
   utter.rate = 1;
   window.speechSynthesis.speak(utter);
 }
