@@ -1108,13 +1108,15 @@ function loadSavedSentences() {
 
 function renderSavedSentences(sentences) {
   savedSentencesList.innerHTML = '';
+  // Only show single-sentence items (not pairs from Speak tab)
+  const filtered = sentences.filter(item => item.sentence && !item.correct && !item.spoken);
   // Filter by search
   const query = (searchSentencesBar?.value || '').toLowerCase();
-  const filtered = sentences.filter(item =>
-    item.sentence.toLowerCase().includes(query) ||
-    item.timestamp.toLowerCase().includes(query)
+  const filteredByQuery = filtered.filter(item =>
+    (item.sentence ? item.sentence.toLowerCase().includes(query) : false) ||
+    (item.timestamp ? item.timestamp.toLowerCase().includes(query) : false)
   );
-  if (!filtered.length) {
+  if (!filteredByQuery.length) {
     const li = document.createElement('li');
     li.textContent = 'No saved sentences.';
     li.style.textAlign = 'center';
@@ -1123,7 +1125,7 @@ function renderSavedSentences(sentences) {
     savedSentencesList.appendChild(li);
     return;
   }
-  filtered.forEach((item, idx) => {
+  filteredByQuery.forEach((item, idx) => {
     const li = document.createElement('li');
     li.className = 'saved-sentence-item';
     li.innerHTML = `
@@ -1136,18 +1138,20 @@ function renderSavedSentences(sentences) {
         <button class="delete-saved-sentence" title="Delete sentence" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
       </span>
     `;
-    // Copy
     li.querySelector('.copy-saved-sentence').onclick = () => {
       navigator.clipboard.writeText(item.sentence);
       showSnackbar('Sentence copied!');
     };
-    // Delete
     li.querySelector('.delete-saved-sentence').onclick = () => {
       const saved = JSON.parse(localStorage.getItem('savedSentences') || '[]');
-      saved.splice(idx, 1);
-      localStorage.setItem('savedSentences', JSON.stringify(saved));
-      loadSavedSentences();
-      showSnackbar('Sentence deleted');
+      // Find the index of this item in the full saved array
+      const realIdx = saved.findIndex(s => s.sentence === item.sentence && s.timestamp === item.timestamp);
+      if (realIdx !== -1) {
+        saved.splice(realIdx, 1);
+        localStorage.setItem('savedSentences', JSON.stringify(saved));
+        loadSavedSentences();
+        showSnackbar('Sentence deleted');
+      }
     };
     savedSentencesList.appendChild(li);
   });
@@ -1281,6 +1285,7 @@ let lastTranscript = '';
 const speakEditBtn = document.getElementById('speak-edit-btn');
 const speakEditInput = document.getElementById('speak-edit-input');
 const speakEditConfirm = document.getElementById('speak-edit-confirm');
+const speakSaveBtnContainer = document.getElementById('speak-save-btn-container');
 
 if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
   // Hide check button initially
@@ -1429,6 +1434,7 @@ if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
       return;
     }
     speakFeedback.textContent = 'Checking...';
+    speakSaveBtnContainer.innerHTML = '';
     const apiKey = getNextApiKey ? getNextApiKey() : null;
     if (!apiKey) {
       speakFeedback.textContent = 'Please add at least one API key in settings.';
@@ -1498,6 +1504,7 @@ if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
             </svg>\
           </span>\
         </div>`;
+        speakSaveBtnContainer.innerHTML = '';
       } else {
         // Show red cross and correction
         speakFeedback.innerHTML = `<div class=\"feedback-centered-box\" style=\"padding:24px 0 18px 0;text-align:center;\">\
@@ -1509,6 +1516,26 @@ if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
           </span>\
           <div style='margin-top:18px;font-size:1.15em;font-weight:600;color:#ffd700;'>${corrected}</div>\
         </div>`;
+        // Add save button below correction
+        speakSaveBtnContainer.innerHTML = `<button id='save-speak-sentence-btn' style='margin-top:8px;padding:6px 18px;border-radius:8px;background:#ffd700;color:#23272f;font-weight:600;border:none;cursor:pointer;'><i class='fa-solid fa-bookmark'></i> Save this pair</button>`;
+        const saveSpeakSentenceBtn = document.getElementById('save-speak-sentence-btn');
+        if (saveSpeakSentenceBtn) {
+          saveSpeakSentenceBtn.onclick = () => {
+            // Save both correct and spoken sentence
+            const timestamp = new Date().toLocaleString();
+            let saved = JSON.parse(localStorage.getItem('savedSentences') || '[]');
+            // Prevent duplicate saves (same correct+spoken)
+            if (saved.some(s => s.correct === corrected && s.spoken === lastTranscript)) {
+              showSnackbar('This pair is already saved!');
+              return;
+            }
+            saved.unshift({ correct: corrected, spoken: lastTranscript, timestamp });
+            localStorage.setItem('savedSentences', JSON.stringify(saved));
+            loadSavedSentences();
+            showSnackbar('Pair saved!');
+            speakSaveBtnContainer.innerHTML = '';
+          };
+        }
       }
       // Add fade-in animation and box style
       const style = document.createElement('style');
@@ -1520,6 +1547,66 @@ if (speakRecordBtn && speakTranscript && speakCheckBtn && speakFeedback) {
       document.head.appendChild(style);
     } catch (e) {
       speakFeedback.textContent = 'Error contacting Gemini API.';
+      speakSaveBtnContainer.innerHTML = '';
     }
   };
 }
+
+const speakSavedSentencesList = document.getElementById('speak-saved-sentences-list');
+
+function renderSpeakSavedSentences(sentences) {
+  if (!speakSavedSentencesList) return;
+  speakSavedSentencesList.innerHTML = '';
+  if (!sentences || !sentences.length) {
+    const li = document.createElement('li');
+    li.textContent = 'No saved pairs yet.';
+    li.style.textAlign = 'center';
+    li.style.color = '#888';
+    li.style.padding = '18px 0';
+    speakSavedSentencesList.appendChild(li);
+    return;
+  }
+  sentences.forEach((item, idx) => {
+    if (item.correct && item.spoken) {
+      const li = document.createElement('li');
+      li.className = 'saved-sentence-item';
+      li.innerHTML = `
+        <div style=\"display: flex; flex-direction: column; flex: 1;\">
+          <span class=\"saved-sentence-text\">${item.correct}</span>
+          <span class=\"saved-sentence-spoken\" style=\"font-size:0.95em;color:#aaa;margin-top:2px;\">${item.spoken}</span>
+          <span class=\"saved-sentence-meta\">${item.timestamp}</span>
+        </div>
+        <span class=\"saved-sentence-actions\">
+          <button class=\"copy-speak-saved-sentence\" title=\"Copy correct sentence\" aria-label=\"Copy\"><i class=\"fa-solid fa-copy\"></i></button>
+          <button class=\"delete-speak-saved-sentence\" title=\"Delete sentence\" aria-label=\"Delete\"><i class=\"fa-solid fa-trash\"></i></button>
+        </span>
+      `;
+      li.querySelector('.copy-speak-saved-sentence').onclick = () => {
+        navigator.clipboard.writeText(item.correct);
+        showSnackbar('Correct sentence copied!');
+      };
+      li.querySelector('.delete-speak-saved-sentence').onclick = () => {
+        const saved = JSON.parse(localStorage.getItem('savedSentences') || '[]');
+        saved.splice(idx, 1);
+        localStorage.setItem('savedSentences', JSON.stringify(saved));
+        loadSavedSentences();
+        renderSpeakSavedSentences(saved);
+        showSnackbar('Pair deleted');
+      };
+      speakSavedSentencesList.appendChild(li);
+    }
+  });
+}
+
+// Patch loadSavedSentences to also update Speak tab
+const origLoadSavedSentences = loadSavedSentences;
+function loadSavedSentences() {
+  const saved = JSON.parse(localStorage.getItem('savedSentences') || '[]');
+  renderSavedSentences(saved);
+  renderSpeakSavedSentences(saved);
+}
+
+// On page load, render speak tab saved pairs too
+window.addEventListener('DOMContentLoaded', () => {
+  loadSavedSentences();
+});
